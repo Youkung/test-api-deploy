@@ -13,11 +13,9 @@ const PORT = process.env.PORT || 8080;
 
 // Database configuration
 const pool = mysql.createPool({
-    host: process.env.DB_HOST || "interchange.proxy.rlwy.net",
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "your-password",
-    database: process.env.DB_NAME || "railway",
-    port: process.env.DB_PORT || 56259,
+    host: "localhost",
+    user: "root",
+    database: "ntdtb",
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
