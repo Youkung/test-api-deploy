@@ -13,11 +13,11 @@ const PORT = process.env.PORT || 8080; // ถ้าไม่เจอจะใ�
 
 // Database configuration
 const pool = mysql.createPool({
-    host: "interchange.proxy.rlwy.net",  // HOST
-    user: "root",                        // USER
-    password: "ayvKxYsYOsIfYzRdOjSxUUtSKjFqucOQ",  // PASSWORD
-    database: "railway",                  // DATABASE
-    port: 56259,                           // PORT
+    host: process.env.DB_HOST, // ใช้ตัวแปรจาก Vercel
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
