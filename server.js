@@ -46,10 +46,6 @@ function generateToken() {
     return crypto.randomBytes(16).toString("hex");
 }
 
-app.use("/" , (req , res) => {
-    res.send("server is runnig.");
-})
-
 // Authentication routes
 app.post("/ntdtb/users", async (req, res) => {
     const { Username, Password } = req.body;
