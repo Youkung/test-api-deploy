@@ -9,15 +9,15 @@ const fs = require("fs");
 const path = require("path");
 
 // ใช้ process.env.PORT สำหรับการทำงานใน Vercel
-const PORT = process.env.PORT || 8080; // ถ้าไม่เจอจะใช้พอร์ต 8080 ในเครื่อง local
+const PORT = process.env.PORT || 8080;
 
 // Database configuration
 const pool = mysql.createPool({
-    host: "interchange.proxy.rlwy.net",  // HOST
-    user: "root",                        // USER
-    password: "ayvKxYsYOsIfYzRdOjSxUUtSKjFqucOQ",  // PASSWORD
-    database: "railway",                  // DATABASE
-    port: 56259,                           // PORT
+    host: process.env.DB_HOST || "interchange.proxy.rlwy.net",
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "your-password",
+    database: process.env.DB_NAME || "railway",
+    port: process.env.DB_PORT || 56259,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
