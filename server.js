@@ -13,12 +13,14 @@ const PORT = process.env.PORT || 8080;
 
 // Database configuration
 const pool = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    database: "ntdtb",
+    host: 'sql12.freesqldatabase.com', 
+    user: 'sql12765998',  
+    password: 'pdxlFPtSFj', 
+    database: 'sql12765998',
+    port: 3306, 
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    connectionLimit: 10, 
+    queueLimit: 0  
 });
 
 pool.getConnection((err, connection) => {
@@ -29,6 +31,15 @@ pool.getConnection((err, connection) => {
         connection.release(); // ปล่อย connection กลับไปใน pool
     }
 });
+
+pool.query('SELECT * FROM role', (err, results) => {
+    if (err) {
+      console.error('❌ Query failed:', err);
+    } else {
+      console.log('✅ Query results:', results);
+    }
+  });
+
 
 const db = pool.promise();
 
@@ -49,7 +60,7 @@ app.post("/ntdtb/users", async (req, res) => {
     const { Username, Password } = req.body;
 
     console.log("📩 Received login request:", Username, Password);
-    
+
     if (!Username || !Password) {
         return res.status(400).json({ error: "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน" });
     }
@@ -85,16 +96,16 @@ app.post("/ntdtb/users", async (req, res) => {
                 }
             });
         } else {
-            res.status(401).json({ 
+            res.status(401).json({
                 success: false,
-                error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" 
+                error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
             });
         }
     } catch (error) {
         console.error("Login error:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ" 
+            error: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ"
         });
     }
 });
@@ -105,14 +116,14 @@ function generateID(currentMaxID, prefix) {
         // If no existing ID, start from 1
         return `${prefix}00000001`;
     }
-    
+
     // Extract the numeric part and increment
     const currentNumber = parseInt(currentMaxID.substring(1), 10);
     if (isNaN(currentNumber)) {
         // If parsing fails, start from 1
         return `${prefix}00000001`;
     }
-    
+
     // Increment and pad with zeros
     const nextNumber = currentNumber + 1;
     return `${prefix}${nextNumber.toString().padStart(8, "0")}`;
@@ -125,21 +136,21 @@ async function getNextID(tableName, idField, prefix) {
         const [result] = await db.query(
             `SELECT MAX(CAST(SUBSTRING(${idField}, 2) AS UNSIGNED)) as maxNum FROM ${tableName}`
         );
-        
+
         // If no results or null, start from 1
         const nextNum = (result[0].maxNum || 0) + 1;
         const newID = `${prefix}${nextNum.toString().padStart(8, '0')}`;
-        
+
         // Verify ID is unique
         const [existing] = await db.query(
             `SELECT ${idField} FROM ${tableName} WHERE ${idField} = ?`,
             [newID]
         );
-        
+
         if (existing.length > 0) {
             throw new Error(`ID ${newID} already exists`);
         }
-        
+
         return newID;
     } catch (error) {
         console.error(`Error in getNextID for ${tableName}:`, error);
@@ -298,7 +309,7 @@ app.put("/api/equipment/:Equipe_ID", function (req, res) {
 app.post("/api/equipment", async function (req, res) {
     const { User_ID, Equipe_Photo, Equipe_Name, Equipe_Type, Model_Number, Brand } = req.body;
     const Equipe_CreatDate = req.body.Equipe_CreatDate || new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+
     if (!Equipe_Photo || !Equipe_Photo.startsWith("data:image")) {
         return res.status(400).json({ message: "รูปภาพไม่ถูกต้อง" });
     }
@@ -545,15 +556,15 @@ app.delete("/api/item/:Item_ID", async (req, res) => {
 
         // First check if item exists
         const [item] = await connection.query(
-            "SELECT * FROM item WHERE Item_ID = ?", 
+            "SELECT * FROM item WHERE Item_ID = ?",
             [Item_ID]
         );
 
         if (item.length === 0) {
             await connection.rollback();
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                message: "ไม่พบอุปกรณ์ในระบบ" 
+                message: "ไม่พบอุปกรณ์ในระบบ"
             });
         }
 
@@ -570,9 +581,9 @@ app.delete("/api/item/:Item_ID", async (req, res) => {
         );
 
         await connection.commit();
-        res.status(200).json({ 
+        res.status(200).json({
             success: true,
-            message: "ลบอุปกรณ์สำเร็จ" 
+            message: "ลบอุปกรณ์สำเร็จ"
         });
 
     } catch (error) {
@@ -580,10 +591,10 @@ app.delete("/api/item/:Item_ID", async (req, res) => {
             await connection.rollback();
         }
         console.error("Error deleting item:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: "เกิดข้อผิดพลาดในการลบอุปกรณ์",
-            error: error.message 
+            error: error.message
         });
     } finally {
         if (connection) {
@@ -610,27 +621,27 @@ app.put("/api/item/:Item_ID", async (req, res) => {
 
         // Check if Object_ID exists
         const [objectResult] = await connection.query(
-            "SELECT * FROM object WHERE Object_ID = ?", 
+            "SELECT * FROM object WHERE Object_ID = ?",
             [Object_ID]
         );
 
         if (objectResult.length === 0) {
             await connection.rollback();
-            return res.status(400).json({ 
-                message: "Object_ID ที่ระบุไม่พบในฐานข้อมูล" 
+            return res.status(400).json({
+                message: "Object_ID ที่ระบุไม่พบในฐานข้อมูล"
             });
         }
 
         // Get current item data
         const [currentItem] = await connection.query(
-            "SELECT * FROM item WHERE Item_ID = ?", 
+            "SELECT * FROM item WHERE Item_ID = ?",
             [Item_ID]
         );
-        
+
         if (currentItem.length === 0) {
             await connection.rollback();
-            return res.status(404).json({ 
-                message: "ไม่พบข้อมูลที่ต้องการแก้ไข" 
+            return res.status(404).json({
+                message: "ไม่พบข้อมูลที่ต้องการแก้ไข"
             });
         }
 
@@ -675,9 +686,9 @@ app.put("/api/item/:Item_ID", async (req, res) => {
             await connection.rollback();
         }
         console.error("Error updating item:", error);
-        res.status(500).json({ 
-            message: "เกิดข้อผิดพลาดในการแก้ไขข้อมูล", 
-            error: error.message 
+        res.status(500).json({
+            message: "เกิดข้อผิดพลาดในการแก้ไขข้อมูล",
+            error: error.message
         });
     } finally {
         if (connection) {
@@ -722,17 +733,17 @@ app.post("/api/changestatus", async (req, res) => {
             [Item_history_Status, Item_history_Other || '', Item_ID]
         );
 
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
             message: "Status updated successfully",
-            statusId: newStatusID 
+            statusId: newStatusID
         });
     } catch (error) {
         console.error("Error in changestatus:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: "Failed to update status",
-            error: error.message 
+            error: error.message
         });
     }
 });
@@ -814,13 +825,13 @@ app.get("/api/user/profile", async function (req, res) {
             FROM user_nt 
             WHERE accessToken = ?
         `;
-        
+
         const [results] = await db.query(sql, [token]);
-        
+
         if (results.length === 0) {
             return res.status(404).json({ error: "User not found" });
         }
-        
+
         // Don't transform the data, send it as is from database
         res.json(results[0]);
     } catch (error) {
@@ -980,7 +991,7 @@ app.get("/api/note/images/:noteId", function (req, res) {
         WHERE Note_ID = ?
         ORDER BY Image_ID
     `;
-    
+
     db.query(sql, [noteId])
         .then(([results]) => {
             res.json({ images: results });
@@ -1001,7 +1012,7 @@ app.post("/api/note", async function (req, res) {
 
         // Generate new note ID
         const newNoteID = await getNextID('note', 'Note_ID', 'N');
-        
+
         // Insert note
         await connection.query(
             `INSERT INTO note 
@@ -1018,7 +1029,7 @@ app.post("/api/note", async function (req, res) {
                 );
                 const nextNum = (maxImageResult[0].maxNum || 0) + 1;
                 const newImageID = `I${nextNum.toString().padStart(8, '0')}`;
-                
+
                 await connection.query(
                     "INSERT INTO note_images (Image_ID, Note_ID, Image_Path) VALUES (?, ?, ?)",
                     [newImageID, newNoteID, imagePath]
@@ -1027,10 +1038,10 @@ app.post("/api/note", async function (req, res) {
         }
 
         await connection.commit();
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
-            message: "Note created successfully", 
-            Note_ID: newNoteID 
+            message: "Note created successfully",
+            Note_ID: newNoteID
         });
 
     } catch (error) {
@@ -1038,10 +1049,10 @@ app.post("/api/note", async function (req, res) {
             await connection.rollback();
         }
         console.error("Error creating note:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            message: "Error creating note", 
-            error: error.message 
+            message: "Error creating note",
+            error: error.message
         });
     } finally {
         if (connection) {
@@ -1072,7 +1083,7 @@ app.delete("/api/note/:Note_ID", async (req, res) => {
             });
         }
         await db.query("DELETE FROM note_images WHERE Note_ID = ?", [Note_ID]);
-        
+
         // Then delete the note
         await db.query("DELETE FROM note WHERE Note_ID = ?", [Note_ID]);
 
@@ -1161,17 +1172,17 @@ app.listen(PORT, function () {
 
 app.get("/api/mynotes", function (req, res) {
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     const userSql = "SELECT User_ID FROM user_nt WHERE accessToken = ?";
-    
+
     db.query(userSql, [token])
         .then(([userResults]) => {
             if (userResults.length === 0) {
                 return res.status(401).json({ error: "Unauthorized" });
             }
-            
+
             const userId = userResults[0].User_ID;
-            
+
             const noteSql = `
                 SELECT 
                     note.Note_ID,
@@ -1184,7 +1195,7 @@ app.get("/api/mynotes", function (req, res) {
                 INNER JOIN user_nt ON note.User_ID = user_nt.User_ID
                 WHERE note.User_ID = ?
             `;
-            
+
             return db.query(noteSql, [userId]);
         })
         .then(([noteResults]) => {
@@ -1203,7 +1214,7 @@ app.get("/api/device-summary", async (req, res) => {
         const [totalResult] = await db.query(
             'SELECT COUNT(*) as count FROM item'
         );
-        
+
         // Get active items count - modified to check for "ใช้งานได้" status
         const [activeResult] = await db.query(
             'SELECT COUNT(*) as count FROM item WHERE Item_Status = "active"'
@@ -1260,7 +1271,7 @@ app.delete("/api/note/:Note_ID", async (req, res) => {
 
         // First delete related images
         await db.query("DELETE FROM note_images WHERE Note_ID = ?", [Note_ID]);
-        
+
         // Then delete the note
         await db.query("DELETE FROM note WHERE Note_ID = ?", [Note_ID]);
 
@@ -1270,12 +1281,12 @@ app.delete("/api/note/:Note_ID", async (req, res) => {
         res.status(500).json({ message: "เกิดข้อผิดพลาดในการลบบันทึก" });
     }
 });
-    
+
 app.get("/api/rooms", async (req, res) => {
     let connection;
     try {
         connection = await db.getConnection();
-        
+
         // Add error handling for the query
         const [results] = await connection.query(`
             SELECT 
@@ -1296,20 +1307,20 @@ app.get("/api/rooms", async (req, res) => {
             console.error("Query error:", err);
             throw new Error("Database query failed");
         });
-        
+
         // Ensure we always return a valid JSON response
-        res.json({ 
+        res.json({
             success: true,
             data: results || [],
             message: "Data retrieved successfully"
         });
     } catch (error) {
         console.error("Error fetching rooms:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             data: [],
             message: "เกิดข้อผิดพลาดในการดึงข้อมูลห้อง",
-            error: error.message 
+            error: error.message
         });
     } finally {
         if (connection) {
@@ -1320,7 +1331,7 @@ app.get("/api/rooms", async (req, res) => {
 
 app.get("/api/rooms/search", async (req, res) => {
     const { branch_number, branch_name, building, floor, room } = req.query;
-    
+
     try {
         let sql = `
             SELECT 
@@ -1336,9 +1347,9 @@ app.get("/api/rooms/search", async (req, res) => {
             LEFT JOIN item ON object.Object_ID = item.Object_ID
             WHERE 1=1
         `;
-        
+
         const values = [];
-        
+
         if (branch_number) {
             sql += " AND node.Node_Location LIKE ?";
             values.push(`%${branch_number}%`);
@@ -1359,26 +1370,26 @@ app.get("/api/rooms/search", async (req, res) => {
             sql += " AND room.Room_Name LIKE ?";
             values.push(`%${room}%`);
         }
-        
+
         sql += " GROUP BY node.Node_ID, room.Room_ID";
 
         const [results] = await db.query(sql, values);
         res.json({ data: results });
     } catch (error) {
         console.error("Error searching rooms:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: "เกิดข้อผิดพลาดในการค้นหาห้อง",
-            error: error.message 
+            error: error.message
         });
     }
 });
 
 app.get("/api/rooms/suggestions", async (req, res) => {
     const { type, search } = req.query;
-    
+
     try {
         let sql = '';
-        switch(type) {
+        switch (type) {
             case 'branch_number':
                 sql = "SELECT DISTINCT Node_Location FROM node WHERE Node_Location LIKE ? LIMIT 5";
                 break;
@@ -1400,9 +1411,9 @@ app.get("/api/rooms/suggestions", async (req, res) => {
         res.json({ suggestions });
     } catch (error) {
         console.error("Error fetching suggestions:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: "เกิดข้อผิดพลาดในการดึงคำแนะนำ",
-            error: error.message 
+            error: error.message
         });
     }
 });
@@ -1416,7 +1427,7 @@ app.delete("/api/rooms/node/:nodeId", async (req, res) => {
 
         // Check if node exists
         const [node] = await connection.query(
-            "SELECT * FROM node WHERE Node_ID = ?", 
+            "SELECT * FROM node WHERE Node_ID = ?",
             [req.params.nodeId]
         );
 
@@ -1483,10 +1494,10 @@ app.delete("/api/rooms/room/:roomId", async (req, res) => {
 
         // Check if room exists
         const [room] = await connection.query(
-            "SELECT * FROM room WHERE Room_ID = ?", 
+            "SELECT * FROM room WHERE Room_ID = ?",
             [req.params.roomId]
         );
-        
+
         if (room.length === 0) {
             await connection.rollback();
             return res.status(404).json({ message: "ไม่พบห้องที่ระบุในระบบ" });
@@ -1517,7 +1528,7 @@ app.delete("/api/rooms/room/:roomId", async (req, res) => {
             "DELETE FROM room WHERE Room_ID = ?",
             [req.params.roomId]
         );
-        
+
         await connection.commit();
         res.json({ message: "ลบห้องและพื้นที่ว่างเรียบร้อยแล้ว" });
 
@@ -1617,7 +1628,7 @@ app.post("/api/note", async function (req, res) {
 
     try {
         const newNoteID = await getNextID('note', 'Note_ID', 'N');
-        
+
         await db.query(
             "INSERT INTO note (Note_ID, User_ID, Note_Head, Note, Note_CreateDate) VALUES (?, ?, ?, ?, ?)",
             [newNoteID, User_ID, Note_Head, Note, Note_CreateDate]
@@ -1760,7 +1771,7 @@ app.put("/api/user/profile/update", async (req, res) => {
                 WHERE accessToken = ?
             `;
 
-            const updateParams = password 
+            const updateParams = password
                 ? [username, name, email, phone, password, accessToken]
                 : [username, name, email, phone, accessToken];
 
@@ -1774,7 +1785,7 @@ app.put("/api/user/profile/update", async (req, res) => {
 
             await connection.commit();
 
-            res.json({ 
+            res.json({
                 success: true,
                 message: "Profile updated successfully",
                 data: updatedUser[0]
@@ -1787,7 +1798,7 @@ app.put("/api/user/profile/update", async (req, res) => {
         }
     } catch (error) {
         console.error("Error updating profile:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: "Failed to update profile",
             error: error.message
@@ -1848,13 +1859,13 @@ app.get("/api/equipment/search", function (req, res) {
 
 app.get("/api/equipment/suggestions", function (req, res) {
     const { type, search } = req.query;
-    
+
     if (!type || !search) {
         return res.status(400).json({ suggestions: [] });
     }
 
     let sql = '';
-    switch(type) {
+    switch (type) {
         case 'Serial_Number':
             sql = `
                 SELECT DISTINCT Serial_Number as suggestion 
@@ -2038,8 +2049,8 @@ app.get("/api/object-details", async (req, res) => {
 });
 
 app.get("/api/equipment-by-node", async (req, res) => {
-  try {
-    const sql = `
+    try {
+        const sql = `
       SELECT 
         n.Node_Name, 
         COUNT(e.Equipe_ID) as EquipmentCount
@@ -2049,18 +2060,18 @@ app.get("/api/equipment-by-node", async (req, res) => {
       LEFT JOIN equipement e ON i.Equipe_ID = e.Equipe_ID
       GROUP BY n.Node_Name
     `;
-    const [results] = await db.query(sql);
-    res.json(results);
-  } catch (error) {
-    console.error("Error fetching equipment by node:", error);
-    res.status(500).json({ message: "Error fetching equipment by node" });
-  }
+        const [results] = await db.query(sql);
+        res.json(results);
+    } catch (error) {
+        console.error("Error fetching equipment by node:", error);
+        res.status(500).json({ message: "Error fetching equipment by node" });
+    }
 });
 
 // เพิ่ม endpoint สำหรับดึงข้อมูลกิจกรรมล่าสุด
 app.get("/api/recent-activities", async (req, res) => {
-  try {
-    const sql = `
+    try {
+        const sql = `
       SELECT 
         'note' as type,
         CONCAT('New note: ', note.Note_Head) as title,
@@ -2075,24 +2086,24 @@ app.get("/api/recent-activities", async (req, res) => {
       ORDER BY timestamp DESC
       LIMIT 10
     `;
-    
-    const [results] = await db.query(sql);
-    res.json(results);
-  } catch (error) {
-    console.error('Error fetching recent activities:', error);
-    res.status(500).json({ error: 'Failed to fetch recent activities' });
-  }
+
+        const [results] = await db.query(sql);
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching recent activities:', error);
+        res.status(500).json({ error: 'Failed to fetch recent activities' });
+    }
 });
 
 // New room management endpoints
 app.post("/api/rooms/node", async (req, res) => {
     const { name, location, building } = req.body;
-    
+
     console.log("Received node creation request:", req.body);
 
     if (!name || !location) {
-        return res.status(400).json({ 
-            message: "ต้องระบุทั้งชื่อสาขาและเลขสาขา" 
+        return res.status(400).json({
+            message: "ต้องระบุทั้งชื่อสาขาและเลขสาขา"
         });
     }
 
@@ -2137,21 +2148,21 @@ app.post("/api/rooms/node", async (req, res) => {
         await connection.commit();
         console.log("Node created successfully:", { id: newNodeID, name, location, building });
 
-        res.status(201).json({ 
-            message: "สร้างสาขาใหม่สำเร็จ", 
-            node: { 
-                id: newNodeID, 
-                name, 
+        res.status(201).json({
+            message: "สร้างสาขาใหม่สำเร็จ",
+            node: {
+                id: newNodeID,
+                name,
                 location,
-                building 
-            } 
+                building
+            }
         });
     } catch (error) {
         if (connection) {
             await connection.rollback();
         }
         console.error("Error creating node:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: "เกิดข้อผิดพลาดในการสร้างสาขา",
             error: error.message
         });
@@ -2173,14 +2184,14 @@ app.post("/api/rooms/room", async (req, res) => {
 
         // Check if node exists
         const [nodeExists] = await connection.query(
-            "SELECT Node_ID FROM node WHERE Node_ID = ?", 
+            "SELECT Node_ID FROM node WHERE Node_ID = ?",
             [nodeId]
         );
 
         if (nodeExists.length === 0) {
             await connection.rollback();
-            return res.status(404).json({ 
-                message: "ไม่พบสาขาที่ระบุในระบบ" 
+            return res.status(404).json({
+                message: "ไม่พบสาขาที่ระบุในระบบ"
             });
         }
 
@@ -2226,12 +2237,12 @@ app.post("/api/rooms/room", async (req, res) => {
 
         await connection.commit();
 
-        res.status(201).json({ 
+        res.status(201).json({
             message: "สร้างห้องและพื้นที่ว่างเรียบร้อยแล้ว",
-            room: { 
-                id: newRoomID, 
+            room: {
+                id: newRoomID,
                 nodeId,
-                floor, 
+                floor,
                 name
             },
             object: {
@@ -2244,7 +2255,7 @@ app.post("/api/rooms/room", async (req, res) => {
         if (connection) {
             await connection.rollback();
         }
-        res.status(500).json({ 
+        res.status(500).json({
             message: "เกิดข้อผิดพลาดในการสร้างห้องและพื้นที่ว่าง",
             error: error.message
         });
@@ -2305,13 +2316,13 @@ app.get("/api/rooms/nodes/search", async (req, res) => {
             `%${search}%`,   // Location contains
             `%${search}`,    // Location suffix
             `${search}%`,    // For WHERE clause
-            `%${search}%`, 
+            `%${search}%`,
             `%${search}`,
             `${search}%`,
             `%${search}%`,
             `%${search}`
         ]);
-        
+
         res.json({ nodes });
     } catch (error) {
         console.error("Error searching nodes:", error);
@@ -2454,7 +2465,7 @@ app.get("/api/rooms/:roomId/objects", async (req, res) => {
                     ) ih ON i.Item_ID = ih.Item_ID AND ih.rn = 1
                     WHERE i.Item_ID IN (?)
                 `, [itemIds]);
-                
+
                 object.items_history = itemHistories;
             }
         }
@@ -2462,10 +2473,10 @@ app.get("/api/rooms/:roomId/objects", async (req, res) => {
         res.json(objects);
     } catch (err) {
         console.error('Database error:', err);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Error fetching objects",
             details: err.message,
-            sql: err.sql 
+            sql: err.sql
         });
     }
 });
@@ -2515,20 +2526,20 @@ app.get("/api/objects/:objectId/items", async (req, res) => {
                 e.Model_Number
             FROM item i
             JOIN equipement e ON i.Equipe_ID = e.Equipe_ID
-            WHERE i.Object_ID = ?`, 
+            WHERE i.Object_ID = ?`,
             [req.params.objectId]
         );
-        
-        res.json({ 
+
+        res.json({
             success: true,
-            data: items 
+            data: items
         });
     } catch (error) {
         console.error("Error fetching items:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: "Error fetching items",
-            error: error.message 
+            error: error.message
         });
     }
 });
@@ -2585,9 +2596,9 @@ app.get("/api/available-equipment", async (req, res) => {
         res.json({ success: true, data: equipment });
     } catch (error) {
         console.error("Error fetching available equipment:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Error fetching available equipment" 
+        res.status(500).json({
+            success: false,
+            message: "Error fetching available equipment"
         });
     }
 });
@@ -2595,10 +2606,10 @@ app.get("/api/available-equipment", async (req, res) => {
 // Add equipment to object
 app.post("/api/objects/:objectId/items", async (req, res) => {
     const { objectId } = req.params;
-    const { 
-        User_ID, 
-        Equipe_ID, 
-        Serial_Number, 
+    const {
+        User_ID,
+        Equipe_ID,
+        Serial_Number,
         Item_Status = 'active',
         Item_Others = ''
     } = req.body;
@@ -2725,10 +2736,10 @@ app.get("/api/note/search", async (req, res) => {
 
     } catch (error) {
         console.error('Error searching notes:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             message: 'Error searching notes',
-            error: error.message 
+            error: error.message
         });
     }
 });
